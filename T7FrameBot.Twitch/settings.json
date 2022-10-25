@@ -1,0 +1,19 @@
+{
+  "Twitch": {
+    "UserName": "t7framebot",
+    "Token": "",
+    "JoinChannels": [
+      ""
+    ]
+  },
+  "T7Data": {
+    "JsonFilesPath": "json"
+  },
+  "Command": {
+    "Prefixes": [
+      "!fd",
+      "!framedata",
+      "!frame_data"
+    ]
+  }
+}

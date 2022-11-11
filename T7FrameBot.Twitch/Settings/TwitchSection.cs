@@ -2,8 +2,6 @@
 
 public sealed class TwitchSection
 {
-    public const string SectionName = "Twitch";
-
     public string UserName { get; init; } = default!;
 
     public string Token { get; init; } = default!;

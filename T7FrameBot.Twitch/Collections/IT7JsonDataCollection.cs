@@ -4,7 +4,7 @@ namespace T7FrameBot.Twitch.Collections;
 
 public interface IT7JsonDataCollection
 {
-    IEnumerable<string> GetAllFighterNames();
+    IReadOnlyList<string> AllFighterNames { get; }
 
     IEnumerable<T7Move> GetMovesByFighterName(string fighterName);
 }

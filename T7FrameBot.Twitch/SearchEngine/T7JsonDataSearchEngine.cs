@@ -16,27 +16,21 @@ public sealed class T7JsonDataSearchEngine : IT7JsonDataSearchEngine
     };
 
     private readonly NormalizedLevenshtein _levenshtein = new();
-    private readonly IT7JsonDataCollection _jsonDataCollection;
 
-    public T7JsonDataSearchEngine(IT7JsonDataCollection jsonDataCollection)
+    public SearchResult Search(IT7JsonDataCollection jsonDataCollection, string fighterName, string commandName)
     {
-        _jsonDataCollection = jsonDataCollection;
-    }
-
-    public SearchResult Search(string fighterName, string commandName)
-    {
-        var fighterNames = SearchFighterNames(fighterName)
+        var fighterNames = SearchFighterNames(jsonDataCollection, fighterName)
             .ToArray();
 
         return fighterNames switch
         {
             { Length: 0 } => SearchResult.Empty,
-            { Length: > 1 } => SearchResult.Create(fighterNames),
-            _ => SearchResult.Create(fighterNames, SearchMoves(fighterNames[0], commandName)),
+            { Length: > 1 } => new SearchResult(fighterNames),
+            _ => new SearchResult(fighterNames, SearchMoves(jsonDataCollection, fighterNames[0], commandName)),
         };
     }
 
-    private IEnumerable<string> SearchFighterNames(string fighterName)
+    private IEnumerable<string> SearchFighterNames(IT7JsonDataCollection jsonDataCollection, string fighterName)
     {
         fighterName = fighterName
             .ToLower()
@@ -44,10 +38,7 @@ public sealed class T7JsonDataSearchEngine : IT7JsonDataSearchEngine
 
         fighterName = _aliasByFighterName.GetValueOrDefault(fighterName) ?? fighterName;
 
-        var fighterNames = _jsonDataCollection.GetAllFighterNames()
-            .ToArray();
-
-        var nameStartingWith = fighterNames
+        var nameStartingWith = jsonDataCollection.AllFighterNames
             .Where(name => name.StartsWith(fighterName))
             .Take(2)
             .ToArray();
@@ -57,7 +48,7 @@ public sealed class T7JsonDataSearchEngine : IT7JsonDataSearchEngine
 
         var foundNames = new List<string>();
 
-        foreach (var name in fighterNames)
+        foreach (var name in jsonDataCollection.AllFighterNames)
         {
             switch (fighterName)
             {
@@ -73,13 +64,13 @@ public sealed class T7JsonDataSearchEngine : IT7JsonDataSearchEngine
         return foundNames;
     }
 
-    private IEnumerable<T7Move> SearchMoves(string fighterName, string commandName)
+    private IEnumerable<T7Move> SearchMoves(IT7JsonDataCollection jsonDataCollection, string fighterName, string commandName)
     {
         commandName = SimplifyCommandName(commandName);
 
         var foundMoves = new List<T7Move>();
 
-        foreach (var move in _jsonDataCollection.GetMovesByFighterName(fighterName)
+        foreach (var move in jsonDataCollection.GetMovesByFighterName(fighterName)
             .Where(move => !string.IsNullOrWhiteSpace(move.Command)))
         {
             switch (SimplifyCommandName(move.Command!))

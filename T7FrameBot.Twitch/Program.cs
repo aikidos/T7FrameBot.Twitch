@@ -19,20 +19,11 @@ try
         .AddJsonFile("settings.json")
         .Build();
 
-    var twitchSection = configuration
-        .GetRequiredSection(TwitchSection.SectionName)
-        .Get<TwitchSection>();
+    var settings = configuration.Get<BotSettings>()!;
 
-    var dataSection = configuration
-        .GetRequiredSection(T7DataSection.SectionName)
-        .Get<T7DataSection>();
-
-    var commandSection = configuration
-        .GetRequiredSection(CommandSection.SectionName)
-        .Get<CommandSection>();
-
-    var jsonDataCollection = await T7JsonDataCollection.LoadFromPathAsync(dataSection.JsonFilesPath);
-    var searchEngine = new T7JsonDataSearchEngine(jsonDataCollection);
+    var jsonDataCollection = await T7JsonDataCollection.LoadFromPathAsync(settings.T7Data.JsonFilesPath);
+    var searchEngine = new T7JsonDataSearchEngine();
+    var responseMessageBuilder = ResponseMessageBuilder.Default;
 
     var twitchClient = new TwitchClient(protocol: ClientProtocol.TCP);
 
@@ -41,22 +32,21 @@ try
     {
         var chatMessage = receivedArgs.ChatMessage;
 
-        if (!BotChatCommand.TryParse(chatMessage.Message, commandSection.Prefixes, out var command))
+        if (!BotChatCommand.TryParse(chatMessage.Message, settings.Command.Prefixes, out var command))
             return;
 
-        var searchResult = searchEngine.Search(command.Name, command.Body);
+        var searchResult = searchEngine.Search(jsonDataCollection, command.Name, command.Body);
 
-        var responseMessage = ResponseMessageBuilder.Default
-            .Build(command, searchResult);
+        var responseMessage = responseMessageBuilder.Build(command, searchResult);
 
         twitchClient.SendMessage(chatMessage.Channel, responseMessage);
     };
 
-    twitchClient.Initialize(new ConnectionCredentials(twitchSection.UserName, twitchSection.Token));
+    twitchClient.Initialize(new ConnectionCredentials(settings.Twitch.UserName, settings.Twitch.Token));
 
     twitchClient.Connect();
 
-    foreach (var channelName in twitchSection.JoinChannels)
+    foreach (var channelName in settings.Twitch.JoinChannels)
     {
         twitchClient.JoinChannel(channelName);
     }
